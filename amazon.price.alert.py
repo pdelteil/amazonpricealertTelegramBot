@@ -20,24 +20,23 @@ CHAT_ID = config.get('TELEGRAM', 'CHAT_ID')
 apiURL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
 
 def get_amazon_price(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.amazon.com/',
-        }
-    response = requests.get(url, headers=headers)
+    price_value = 0
+    # Headers for request
+    HEADERS = ({'User-Agent':
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
+                'Accept-Language': 'en-US, en;q=0.5'})
+
+    response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
 
-    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(response.content, "lxml")
 
-    # Find the element that contains the price information
-    price_whole_element = soup.find(class_='a-price-whole')
-    price_decimal_element = soup.find(class_='a-price-fraction')
+    price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
 
-    if price_decimal_element is None or price_whole_element is None:
+    if price_span is None:
         return -1
-    # Extract the price text
-    price_text = price_whole_element.get_text() + price_decimal_element.get_text()
+    
+    price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
 
     # Remove currency symbols and convert to float
     price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
@@ -82,10 +81,10 @@ async def check_price_change(id, name, previous_price, url):
         return False
 
 async def main():
+    products_file = configparser.ConfigParser()
 
     while True:
         # Read product information from config file
-        products_file = configparser.ConfigParser()
         products_file.read(PRODUCTS_FILE)
         
         products = products_file.items('PRODUCTS')

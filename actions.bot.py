@@ -3,7 +3,6 @@ import configparser
 from telegram import __version__ as TG_VER
 
 PRODUCTS_FILE= 'products.ini'
-
 CONFIG_FILE = 'config.ini'
 
 # Read params from config file
@@ -40,10 +39,16 @@ logger = logging.getLogger(__name__)
 def get_last_item(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
-        last_line = lines[-1].strip()  # Get the last line and remove leading/trailing whitespace
+        print("lines", lines)
+        line_count = len(lines)
+        print("line_count",line_count)
+        last_line = lines[-1] #.strip()  # Get the last line and remove leading/trailing whitespace
+        print("last_line",last_line)
         parts = last_line.split('=')
+        print(len(parts))
         if len(parts) > 1:
             extracted_string = parts[0].strip()
+            
             return extracted_string
         else:
             return None
@@ -116,15 +121,13 @@ async def add_item(update, context):
     parts = line.split(',', 1)
     if len(parts) > 1:
         line = parts[0] + ',$0,' + parts[1]
-
     try:
         number = int(id) +1 
 
     except ValueError:
         return None
     line = str(number) + " = " + line
-    print(line)
-    with open(file_path, 'a') as file:
+    with open(PRODUCTS_FILE, 'a') as file:
         file.write(line + '\n')
     await update.message.reply_text('Item added successfully.')
 
