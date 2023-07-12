@@ -39,11 +39,11 @@ logger = logging.getLogger(__name__)
 def get_last_item(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
-        print("lines", lines)
+        #print("lines", lines)
         line_count = len(lines)
-        print("line_count",line_count)
-        last_line = lines[-1] #.strip()  # Get the last line and remove leading/trailing whitespace
-        print("last_line",last_line)
+        #print("line_count",line_count)
+        last_line = lines[-1] #.strip() 
+        #print("last_line",last_line)
         parts = last_line.split('=')
         print(len(parts))
         if len(parts) > 1:
@@ -51,7 +51,7 @@ def get_last_item(file_path):
             
             return extracted_string
         else:
-            return None
+            return 0
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
@@ -116,9 +116,9 @@ async def read_items(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 async def add_item(update, context):
     line = update.message.text  # Get the line from the chat input
     line = line.replace("/add_item ", "") 
-
     id = get_last_item(PRODUCTS_FILE)
     parts = line.split(',', 1)
+
     if len(parts) > 1:
         line = parts[0] + ',$0,' + parts[1]
     try:
