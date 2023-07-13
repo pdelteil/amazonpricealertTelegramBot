@@ -138,8 +138,6 @@ def main() -> None:
     application.add_handler(CommandHandler("read_items",read_items))
     application.add_handler(CommandHandler("remove_item",remove_items_by_id))
 
-    # Create a message handler for collecting user input
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, collect_input))
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
