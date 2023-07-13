@@ -6,11 +6,11 @@ import telegram
 import asyncio
 
 #PARAMS
-SLEEP_TIME=0.25 
+SLEEP_TIME=0.25 #between attemps to fetch the price
 RUN_EVERY=900 #seconds = 15 minutes
 PRODUCTS_FILE= 'products.ini'
-CONFIG_FILE = 'config.ini'
-
+CONFIG_FILE = 'config.ini' 
+PRICE_DIFFERENCE=1 #1 dollar, min price difference to notify
 # Read params from config file
 config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
@@ -62,12 +62,14 @@ async def check_price_change(id, name, previous_price, url):
             print("Error with price")
             return False
         if current_price != previous_price:
-            print("Price has changed for", name)
-            print("Previous price: ", previous_price)
-            print("Current price: ", current_price)
-            # Send notification to Telegram
-            await send_telegram_notification(name, previous_price, current_price, url)
+            if abs(current_price - previous_price) >= PRICE_DIFFERENCE:
+                print("Price has changed for", name)
+                print("Previous price: ", previous_price)
+                print("Current price: ", current_price)
+                # Send notification to Telegram
+                await send_telegram_notification(name, previous_price, current_price, url)
             # Update the price in the config file
+            print("Price changed but not more than ", PRICE_DIFFERENCE)
             products_file.set('PRODUCTS', id,f'{name},${current_price},{url}')
             with open(PRODUCTS_FILE, 'w') as productsFile:
                 products_file.write(productsFile)

@@ -39,16 +39,12 @@ logger = logging.getLogger(__name__)
 def get_last_item(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
-        #print("lines", lines)
         line_count = len(lines)
-        #print("line_count",line_count)
         last_line = lines[-1] #.strip() 
-        #print("last_line",last_line)
         parts = last_line.split('=')
         print(len(parts))
         if len(parts) > 1:
             extracted_string = parts[0].strip()
-            
             return extracted_string
         else:
             return 0
@@ -65,7 +61,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """Send a message when the command /help is issued."""
     help_message = """
     Welcome to my bot! Here are the available commands:
-    
     /start - Start the bot
     /help - Get help and instructions
     /command1 - Description of command 1
@@ -111,7 +106,6 @@ async def read_items(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     else:
         await update.message.reply_text(f"No items found in the {PRODUCTS_FILE} file.")
 
-
 # Handler function for adding a line to the file
 async def add_item(update, context):
     line = update.message.text  # Get the line from the chat input
@@ -131,20 +125,6 @@ async def add_item(update, context):
         file.write(line + '\n')
     await update.message.reply_text('Item added successfully.')
 
-# Handler function for collecting user input
-async def collect_input(update, context):
-    chat_id = update.message.chat_id
-    message_text = update.message.text
-
-    # Parse user input and store in the dictionary
-    if 'name' not in user_input.get(chat_id, {}):
-        user_input[chat_id] = {'name': message_text}
-        await update.message.reply_text('Please provide the URL.')
-    elif 'url' not in user_input[chat_id]:
-        user_input[chat_id]['url'] = message_text
-        add_line(update, context)  # Call add_line to add the line to the file
-
-
 def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
@@ -155,7 +135,6 @@ def main() -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("read_items", read_items))
     application.add_handler(CommandHandler("add_item", add_item))
-    application.add_handler(CommandHandler("collect", collect_input))
     application.add_handler(CommandHandler("read_items",read_items))
     application.add_handler(CommandHandler("remove_item",remove_items_by_id))
 
@@ -163,7 +142,6 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, collect_input))
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
-
 
 if __name__ == "__main__":
     main()
