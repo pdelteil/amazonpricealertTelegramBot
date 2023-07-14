@@ -4,6 +4,7 @@ import time
 import configparser
 import telegram
 import asyncio
+import json
 
 #PARAMS
 SLEEP_TIME=0.25 #between attemps to fetch the price
@@ -19,7 +20,7 @@ TELEGRAM_TOKEN = config.get('TELEGRAM', 'TELEGRAM_TOKEN')
 CHAT_ID = config.get('TELEGRAM', 'CHAT_ID')
 apiURL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
 
-def get_amazon_price(url):
+def get_price(url):
     price_value = 0
     # Headers for request
     HEADERS = ({'User-Agent':
@@ -30,16 +31,25 @@ def get_amazon_price(url):
     response.raise_for_status()
 
     soup = BeautifulSoup(response.content, "lxml")
-
-    price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
-
-    if price_span is None:
-        return -1
     
-    price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
+    if "co.suarezclothing.com" in url:
+        #print("The URL contains 'co.suarezclothing.com'")
+        price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
+        script_tag = soup.find('script', type='application/ld+json')
+        json_data = json.loads(script_tag.string)
+        price = json_data['offers']['lowPrice']
 
-    # Remove currency symbols and convert to float
-    price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
+    if "www.amazon.com" in url:
+
+        price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
+
+        if price_span is None:
+            return -1
+    
+        price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
+    
+        # Remove currency symbols and convert to float
+        price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
 
     return price
 
@@ -57,7 +67,7 @@ async def check_price_change(id, name, previous_price, url):
     products_file.read(PRODUCTS_FILE)
 
     try:
-        current_price = get_amazon_price(url)
+        current_price = get_price(url)
         if current_price == -1:
             print("Error with price")
             return False
