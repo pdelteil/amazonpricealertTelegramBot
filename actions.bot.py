@@ -68,15 +68,35 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     await update.message.reply_text(help_message)
 
+def remove_after_number(input):
+    # Split the input string by whitespace
+    parts = input.split()
+
+    # Check if the input string has enough parts
+    if len(parts) < 2:
+        return input
+
+    # Extract the number part
+    number_part = parts[1]
+
+    # Check if the number part is numeric
+    if not number_part.isdigit():
+        return input
+
+    # Join the first two parts and return the result
+    result = ' '.join(parts[:2])
+    return result
+
 async def remove_items_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     config = configparser.ConfigParser()
     config.read(PRODUCTS_FILE)
     line = update.message.text  # Get the line from the chat input
-    number = line.replace("/remove_item ", "")
-    print(number)
+    line = line.replace("/remove_item ", "")
+    #print(line)
+    line = remove_after_number(line)
 
-    if config.has_option('PRODUCTS', str(number)):
-        config.remove_option('PRODUCTS', str(number))
+    if config.has_option('PRODUCTS', str(line)):
+        config.remove_option('PRODUCTS', str(line))
         with open(PRODUCTS_FILE, 'w') as file:
             config.write(file)
         await update.message.reply_text(f"Item {number} removed successfully.")
