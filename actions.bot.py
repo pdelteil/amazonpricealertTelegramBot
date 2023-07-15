@@ -94,9 +94,11 @@ def is_valid_url(url):
 
 def get_last_item(file_path):
     with open(file_path, 'r') as file:
-        lines = file.readlines()
-        line_count = len(lines)
+        #lines = file.readlines()
+        #line_count = len(lines)
+        lines = [line.rstrip('\n') for line in file.readlines() if line.strip()]
         last_line = lines[-1]
+        print(last_line)
         parts = last_line.split(' = ')
         if len(parts) > 1:
             id = parts[0].strip()
@@ -147,17 +149,17 @@ async def remove_items_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
     config = configparser.ConfigParser()
     config.read(PRODUCTS_FILE)
     line = update.message.text  # Get the line from the chat input
-    line = line.replace("/remove_item ", "")
+    id = line.replace("/remove_item ", "")
     #print(line)
-    line = remove_after_number(line)
+    line = remove_after_number(id)
 
     if config.has_option('PRODUCTS', str(line)):
         config.remove_option('PRODUCTS', str(line))
         with open(PRODUCTS_FILE, 'w') as file:
             config.write(file)
-        await update.message.reply_text(f"Item {number} removed successfully.")
+        await update.message.reply_text(f"Item {id} removed successfully.")
     else:
-        await update.message.reply_text(f"Item {number} not found in {PRODUCTS_FILE} file.")
+        await update.message.reply_text(f"Item {id} not found in {PRODUCTS_FILE} file.")
     # Update the IDs of the following items
     products = config.items('PRODUCTS')
     updated_config = configparser.ConfigParser()
@@ -199,14 +201,28 @@ async def add_item(update, context):
         #parts = line.split(',', 1)
         #if len(parts) > 1:
         line = name + ',$0,' + url
+        print(line)
         try:
             number = int(id) +1 
 
         except ValueError:
             return None
-        line = str(number) + " = " + line
-        with open(PRODUCTS_FILE, 'a') as file:
-            file.write(line)
+        new_line = "\n"+ str(number) + " = " + line
+        # Modify the lines, overwriting lines that match the criteria
+
+        # Read the content of the file
+        with open(PRODUCTS_FILE, 'r') as file:
+            lines = file.readlines()
+        modified_lines = [lines[0]]
+        for line in lines:
+            if line.strip() and ("," in line or "=" in line):
+                modified_lines.append(line)
+            #else:
+            #    modified_lines.append("New content for matching line\n")
+        modified_lines.append(new_line)
+        # Write the modified lines back to the file
+        with open(PRODUCTS_FILE, 'w') as file:
+            file.writelines(modified_lines)
         await update.message.reply_text('Item added successfully.')
 
 def main() -> None:

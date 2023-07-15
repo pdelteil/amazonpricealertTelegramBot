@@ -58,10 +58,12 @@ def get_price_name(name,url):
         name =  get_name(soup, url)
         print(name)
     if "co.suarezclothing.com" in url:
-        price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
+        #price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
         script_tag = soup.find('script', type='application/ld+json')
-        json_data = json.loads(script_tag.string)
-        price = json_data['offers']['lowPrice']
+        if script_tag is not None:
+            json_data = json.loads(script_tag.string)
+            price = json_data['offers']['lowPrice']
+   
 
     if "www.amazon.com" in url:
 
