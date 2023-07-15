@@ -36,12 +36,68 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
+from urllib.parse import urlparse
+
+def extract_parts(input):
+    # Find the index of the comma
+    comma_index = input.find(',')
+
+    # Extract the string part and URL part
+    string_part = input[len("/add_item"):comma_index].strip()
+    url_part = input[comma_index + 1:].strip()
+
+    return string_part, url_part
+
+def validate_input(input):
+     # Check if the input string is empty
+    if not input:
+        return False
+
+    # Check if the input string starts with '/add_item'
+    if not input.startswith("/add_item"):
+        return False
+
+    # Find the index of the comma
+    comma_index = input.find(',')
+
+    if comma_index == -1:
+        url_part = input[len("/add_item"):].strip()
+        return is_valid_url(url_part)
+
+    # Check if the comma exists and is not the last character
+    if comma_index == len(input) - 1:
+        return False
+
+    return True
+
+def read_value(input):
+    # Find the index of the comma
+    comma_index = input.find(',')
+
+    # If comma_index is -1, the input string is only '/add_item URL'
+    if comma_index == -1:
+        url_part = input[len("/add_item"):].strip()
+        return "", url_part
+
+    # Extract the string part and URL part
+    string_part = input[len("/add_item"):comma_index].strip()
+    url_part = input[comma_index + 1:].strip()
+
+    return string_part, url_part
+
+def is_valid_url(url):
+    # Parse the URL and check if it has a valid scheme and netloc
+    parsed_url = urlparse(url)
+    if parsed_url.scheme and parsed_url.netloc:
+        return True
+    return False
+
 def get_last_item(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
         line_count = len(lines)
         last_line = lines[-1]
-        parts = last_line.split('=')
+        parts = last_line.split(' = ')
         if len(parts) > 1:
             id = parts[0].strip()
             return id
@@ -130,21 +186,28 @@ async def read_items(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 # Handler function for adding a line to the file
 async def add_item(update, context):
     line = update.message.text  # Get the line from the chat input
-    line = line.replace("/add_item ", "") 
-    id = get_last_item(PRODUCTS_FILE)
-    parts = line.split(',', 1)
 
-    if len(parts) > 1:
-        line = parts[0] + ',$0,' + parts[1]
-    try:
-        number = int(id) +1 
+    if not validate_input(line):
+        print("Input is not in the required form.")
+        await update.message.reply_text(f"Input is not in the required form.")
+    else:
+        name, url = read_value(line) # extract_parts(input_str)
+        #line = line.replace("/add_item ", "") 
+        id = get_last_item(PRODUCTS_FILE)
+        print("id",id)
 
-    except ValueError:
-        return None
-    line = str(number) + " = " + line
-    with open(PRODUCTS_FILE, 'a') as file:
-        file.write(line)
-    await update.message.reply_text('Item added successfully.')
+        #parts = line.split(',', 1)
+        #if len(parts) > 1:
+        line = name + ',$0,' + url
+        try:
+            number = int(id) +1 
+
+        except ValueError:
+            return None
+        line = str(number) + " = " + line
+        with open(PRODUCTS_FILE, 'a') as file:
+            file.write(line)
+        await update.message.reply_text('Item added successfully.')
 
 def main() -> None:
     """Start the bot."""

@@ -20,8 +20,28 @@ TELEGRAM_TOKEN = config.get('TELEGRAM', 'TELEGRAM_TOKEN')
 CHAT_ID = config.get('TELEGRAM', 'CHAT_ID')
 apiURL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
 
-def get_price(url):
-    price_value = 0
+def get_name(soup, url):
+    try:
+        # Outer Tag Object
+        if "co.suarezclothing.com" in url:
+            title = soup.find("h1", attrs={"class":'vtex-store-components-3-x-productNameContainer mv0 t-heading-4'})
+            title = title.find("span", attrs={"class":'vtex-store-components-3-x-productBrand'}).text
+            title = title.strip().replace(",", " ")
+
+        if "www.amazon.com" in url:
+            title = soup.find("span", attrs={"id":'productTitle'})
+            title = title.string
+            title = title.strip().replace(",", " ")
+
+    except AttributeError:
+        title = ""
+
+    return title
+
+def get_price_name(name,url):
+    price = "0"
+    print(len(name))
+    print(url)
     # Headers for request
     HEADERS = ({'User-Agent':
                 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
@@ -32,6 +52,11 @@ def get_price(url):
 
     soup = BeautifulSoup(response.content, "lxml")
     
+    # if name is empty -> get_name
+    if name is None or len(name) == 0 :
+        print("calling get_name")
+        name =  get_name(soup, url)
+        print(name)
     if "co.suarezclothing.com" in url:
         price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
         script_tag = soup.find('script', type='application/ld+json')
@@ -43,12 +68,12 @@ def get_price(url):
         price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
 
         if price_span is None:
-            return -1
+            return "-1", name
         price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
         # Remove currency symbols and convert to float
         price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
 
-    return price
+    return price, name
 
 async def send_telegram_notification(item, previous_price, current_price, url):
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -64,10 +89,17 @@ async def check_price_change(id, name, previous_price, url):
     products_file.read(PRODUCTS_FILE)
 
     try:
-        current_price = get_price(url)
+        current_price, name_new = get_price_name(name, url)
+        current_price = float(current_price)
         if current_price == -1:
             print("Error with price")
             return False
+        if len(name)==0:
+            print("Name updated from ", name, "to: ", name_new)
+            products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
+            with open(PRODUCTS_FILE, 'w') as productsFile:
+                products_file.write(productsFile)
+
         if current_price != previous_price:
             if abs(current_price - previous_price) >= PRICE_DIFFERENCE:
                 print("Price has changed for", name)
