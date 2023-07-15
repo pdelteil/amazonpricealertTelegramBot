@@ -33,7 +33,6 @@ def get_price(url):
     soup = BeautifulSoup(response.content, "lxml")
     
     if "co.suarezclothing.com" in url:
-        #print("The URL contains 'co.suarezclothing.com'")
         price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
         script_tag = soup.find('script', type='application/ld+json')
         json_data = json.loads(script_tag.string)
@@ -45,9 +44,7 @@ def get_price(url):
 
         if price_span is None:
             return -1
-    
         price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
-    
         # Remove currency symbols and convert to float
         price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
 

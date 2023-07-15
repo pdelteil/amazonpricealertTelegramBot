@@ -40,12 +40,11 @@ def get_last_item(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
         line_count = len(lines)
-        last_line = lines[-1] #.strip() 
+        last_line = lines[-1]
         parts = last_line.split('=')
-        print(len(parts))
         if len(parts) > 1:
-            extracted_string = parts[0].strip()
-            return extracted_string
+            id = parts[0].strip()
+            return id
         else:
             return 0
 
@@ -63,7 +62,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Welcome to my bot! Here are the available commands:
     /start - Start the bot
     /help - Get help and instructions
-    /command1 - Description of command 1
+    /read_items - Show all watched items 
+    /add_item NAME, URL - add item to the list 
+    /remove_item ID - remove item by its id
     """
     await update.message.reply_text(help_message)
 
@@ -122,7 +123,7 @@ async def add_item(update, context):
         return None
     line = str(number) + " = " + line
     with open(PRODUCTS_FILE, 'a') as file:
-        file.write(line + '\n')
+        file.write(line)
     await update.message.reply_text('Item added successfully.')
 
 def main() -> None:
