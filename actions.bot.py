@@ -153,7 +153,7 @@ async def remove_items_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 config.write(file)
             # Update the IDs of the following items
             products = config.items('PRODUCTS')
-            updated_config = configparser.ConfigParser()
+            updated_config = configparser.RawConfigParser()
             updated_config['PRODUCTS'] = {}
             for i, (id_, info) in enumerate(products, start=1):
                 updated_config['PRODUCTS'][str(i)] = info
