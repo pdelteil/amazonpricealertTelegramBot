@@ -1,6 +1,9 @@
 import logging
 import configparser
 from telegram import __version__ as TG_VER
+from urllib.parse import urlparse
+from telegram import ForceReply, Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 PRODUCTS_FILE= 'products.ini'
 CONFIG_FILE = 'config.ini'
@@ -25,8 +28,6 @@ if __version_info__ < (20, 0, 0, "alpha", 1):
         f"This example is not compatible with your current PTB version {TG_VER}. To view the "
         f"{TG_VER} version of this example, "
         f"visit https://docs.python-telegram-bot.org/en/v{TG_VER}/examples.html")
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 # Enable logging
 logging.basicConfig(
@@ -35,18 +36,6 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
-
-from urllib.parse import urlparse
-
-def extract_parts(input):
-    # Find the index of the comma
-    comma_index = input.find(',')
-
-    # Extract the string part and URL part
-    string_part = input[len("/add_item"):comma_index].strip()
-    url_part = input[comma_index + 1:].strip()
-
-    return string_part, url_part
 
 def validate_input(input):
      # Check if the input string is empty
@@ -94,8 +83,6 @@ def is_valid_url(url):
 
 def get_last_item(file_path):
     with open(file_path, 'r') as file:
-        #lines = file.readlines()
-        #line_count = len(lines)
         lines = [line.rstrip('\n') for line in file.readlines() if line.strip()]
         last_line = lines[-1]
         print(last_line)
@@ -146,32 +133,43 @@ def remove_after_number(input):
     return result
 
 async def remove_items_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    config = configparser.ConfigParser()
+    config = configparser.RawConfigParser()
     config.read(PRODUCTS_FILE)
     line = update.message.text  # Get the line from the chat input
-    id = line.replace("/remove_item ", "")
-    #print(line)
-    line = remove_after_number(id)
+    parts = line.strip().split()
 
-    if config.has_option('PRODUCTS', str(line)):
-        config.remove_option('PRODUCTS', str(line))
-        with open(PRODUCTS_FILE, 'w') as file:
-            config.write(file)
-        await update.message.reply_text(f"Item {id} removed successfully.")
+    # Check if the input has two parts and the first part is "/remove_item"
+    if len(parts) == 2 and parts[0] == "/remove_item":
+        # Check if the second part (ID) is an integer
+        try:
+            id = int(parts[1])
+        except ValueError:
+            return await update.message.reply_text(f"wrong format, id not an int")
+
+        # ID is on the products file
+        if config.has_option('PRODUCTS', str(id)):
+            config.remove_option('PRODUCTS', str(id))
+            with open(PRODUCTS_FILE, 'w') as file:
+                config.write(file)
+            # Update the IDs of the following items
+            products = config.items('PRODUCTS')
+            updated_config = configparser.ConfigParser()
+            updated_config['PRODUCTS'] = {}
+            for i, (id_, info) in enumerate(products, start=1):
+                updated_config['PRODUCTS'][str(i)] = info
+    
+            with open(PRODUCTS_FILE, 'w') as file:
+                updated_config.write(file)
+
+            return await update.message.reply_text(f"Item {id} removed successfully.")
+        else:
+            await update.message.reply_text(f"Item {id} not found in {PRODUCTS_FILE} file.")
     else:
-        await update.message.reply_text(f"Item {id} not found in {PRODUCTS_FILE} file.")
-    # Update the IDs of the following items
-    products = config.items('PRODUCTS')
-    updated_config = configparser.ConfigParser()
-    updated_config['PRODUCTS'] = {}
-    for i, (id, info) in enumerate(products, start=1):
-        updated_config['PRODUCTS'][str(i)] = info
-
-    with open(PRODUCTS_FILE, 'w') as file:
-        updated_config.write(file)
+        return await update.message.reply_text(f"wrong format") 
 
 async def read_items(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    config = configparser.ConfigParser()
+    #config = configparser.ConfigParser()
+    config = configparser.RawConfigParser()
     config.read(PRODUCTS_FILE)
     message_content = ""
 
@@ -193,7 +191,7 @@ async def add_item(update, context):
         print("Input is not in the required form.")
         await update.message.reply_text(f"Input is not in the required form.")
     else:
-        name, url = read_value(line) # extract_parts(input_str)
+        name, url = read_value(line) 
         #line = line.replace("/add_item ", "") 
         id = get_last_item(PRODUCTS_FILE)
         print("id",id)
@@ -243,3 +241,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

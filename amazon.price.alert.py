@@ -51,7 +51,7 @@ def get_price_name(name,url):
     response.raise_for_status()
 
     soup = BeautifulSoup(response.content, "lxml")
-    
+
     # if name is empty -> get_name
     if name is None or len(name) == 0 :
         print("calling get_name")
@@ -63,7 +63,6 @@ def get_price_name(name,url):
         if script_tag is not None:
             json_data = json.loads(script_tag.string)
             price = json_data['offers']['lowPrice']
-   
 
     if "www.amazon.com" in url:
 
@@ -87,7 +86,7 @@ async def send_telegram_notification(item, previous_price, current_price, url):
     await bot.send_message(chat_id=CHAT_ID, text=message)
 
 async def check_price_change(id, name, previous_price, url):
-    products_file = configparser.ConfigParser()
+    products_file = configparser.RawConfigParser()
     products_file.read(PRODUCTS_FILE)
 
     try:
@@ -104,14 +103,14 @@ async def check_price_change(id, name, previous_price, url):
 
         if current_price != previous_price:
             if abs(current_price - previous_price) >= PRICE_DIFFERENCE:
-                print("Price has changed for", name)
+                print("Price has changed for", name_new)
                 print("Previous price: ", previous_price)
                 print("Current price: ", current_price)
                 # Send notification to Telegram
                 await send_telegram_notification(name, previous_price, current_price, url)
             # Update the price in the config file
             print("Price changed but not more than ", PRICE_DIFFERENCE)
-            products_file.set('PRODUCTS', id,f'{name},${current_price},{url}')
+            products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
             with open(PRODUCTS_FILE, 'w') as productsFile:
                 products_file.write(productsFile)
 
@@ -124,12 +123,12 @@ async def check_price_change(id, name, previous_price, url):
         return False
 
 async def main():
-    products_file = configparser.ConfigParser()
+    products_file = configparser.RawConfigParser()
 
     while True:
         # Read product information from config file
         products_file.read(PRODUCTS_FILE)
-        
+
         products = products_file.items('PRODUCTS')
 
         for id, info in products:
@@ -141,7 +140,7 @@ async def main():
                 if not status:
                         print(".")
                 else:
-                   break 
+                   break
                 time.sleep(SLEEP_TIME)
         print("Waiting ", RUN_EVERY)
         time.sleep(RUN_EVERY)
