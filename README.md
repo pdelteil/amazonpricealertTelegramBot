@@ -40,4 +40,7 @@ From here you will get the CHAT_ID. If it doesn't work, take a look [here.](http
 
    ![image](https://github.com/pdelteil/amazonpricealertTelegramBot/assets/20244863/caf7a50e-c8a7-427b-9de8-548e59f0a97a)
 
+## Supported ecommerce sites
+- Amazon
+- Suarez Store (https://www.suarezclothing.com/)
    
