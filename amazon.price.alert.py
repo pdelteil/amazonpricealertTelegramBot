@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import configparser
-import telegram
+import telegram  
 import asyncio
 import json
 
@@ -83,12 +83,12 @@ def get_price_name(name,url):
 
 async def send_telegram_notification(item, previous_price, current_price, url):
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    message = f"Price has changed for {item}\n"
+    message = f"Price has changed for <b> {item} </b>\n"
     message += f"Previous price: {previous_price}\n"
     message += f"Current price: {current_price}\n"
     message += f"URL: {url}"
 
-    await bot.send_message(chat_id=CHAT_ID, text=message)
+    await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode='HTML')
 
 async def check_price_change(id, name, previous_price, url):
     products_file = configparser.RawConfigParser()
@@ -112,7 +112,7 @@ async def check_price_change(id, name, previous_price, url):
                 print("Previous price: ", previous_price)
                 print("Current price: ", current_price)
                 # Send notification to Telegram
-                await send_telegram_notification(name, previous_price, current_price, url)
+                await send_telegram_notification(name_new, previous_price, current_price, url)
             # Update the price in the config file
             print("Price changed but not more than ", PRICE_DIFFERENCE)
             products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
