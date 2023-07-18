@@ -22,7 +22,6 @@ apiURL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
 
 def get_name(soup, url):
     try:
-        # Outer Tag Object
         if "co.suarezclothing.com" in url:
             title = soup.find("h1", attrs={"class":'vtex-store-components-3-x-productNameContainer mv0 t-heading-4'})
             title = title.find("span", attrs={"class":'vtex-store-components-3-x-productBrand'}).text
@@ -32,7 +31,7 @@ def get_name(soup, url):
             title = soup.find("span", attrs={"id":'productTitle'})
             title = title.string
             title = title.strip().replace(",", " ")
-        if "cyclewear.com.co" in url:
+        if "cyclewear.com.co" or "www.bikeexchange.com.co" in url:
             title = soup.find("h1", attrs={"class":'h3 CProductHeader-title t-productHeaderHeading'})
             title = title.string
             title = title.strip().replace(",", " ")
@@ -58,8 +57,7 @@ def get_price_name(name,url):
 
     # if name is empty -> get_name
     if name is None or len(name) == 0 :
-        print("calling get_name")
-        name =  get_name(soup, url)
+        name = get_name(soup, url)
         print(name)
 
     if "www.amazon.com" in url:
@@ -72,12 +70,11 @@ def get_price_name(name,url):
         price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
 
     if "co.suarezclothing.com" in url:
-        #price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
         script_tag = soup.find('script', type='application/ld+json')
         if script_tag is not None:
             json_data = json.loads(script_tag.string)
             price = json_data['offers']['lowPrice']
-    if "cyclewear.com.co" in url:
+    if "cyclewear.com.co" in url or "www.bikeexchange.com.co" in url:
         div_element = soup.find('div', class_='yotpo-main-widget')
         # Extract the 'data-price' attribute value
         price = div_element.get('data-price')
