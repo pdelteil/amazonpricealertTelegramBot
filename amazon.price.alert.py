@@ -8,7 +8,7 @@ import json
 
 #PARAMS
 SLEEP_TIME=0.25 #between attemps to fetch the price
-RUN_EVERY=900 #seconds = 15 minutes
+RUN_EVERY=300 #seconds = 5 minutes
 PRODUCTS_FILE= 'products.ini'
 CONFIG_FILE = 'config.ini' 
 PRICE_DIFFERENCE=1 #1 dollar, min price difference to notify
@@ -30,6 +30,10 @@ def get_name(soup, url):
 
         if "www.amazon.com" in url:
             title = soup.find("span", attrs={"id":'productTitle'})
+            title = title.string
+            title = title.strip().replace(",", " ")
+        if "cyclewear.com.co" in url:
+            title = soup.find("h1", attrs={"class":'h3 CProductHeader-title t-productHeaderHeading'})
             title = title.string
             title = title.strip().replace(",", " ")
 
@@ -57,15 +61,8 @@ def get_price_name(name,url):
         print("calling get_name")
         name =  get_name(soup, url)
         print(name)
-    if "co.suarezclothing.com" in url:
-        #price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
-        script_tag = soup.find('script', type='application/ld+json')
-        if script_tag is not None:
-            json_data = json.loads(script_tag.string)
-            price = json_data['offers']['lowPrice']
 
     if "www.amazon.com" in url:
-
         price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
 
         if price_span is None:
@@ -73,6 +70,17 @@ def get_price_name(name,url):
         price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
         # Remove currency symbols and convert to float
         price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
+
+    if "co.suarezclothing.com" in url:
+        #price_span = soup.find("div",attrs={"class":'vtex-product-context-provider'})
+        script_tag = soup.find('script', type='application/ld+json')
+        if script_tag is not None:
+            json_data = json.loads(script_tag.string)
+            price = json_data['offers']['lowPrice']
+    if "cyclewear.com.co" in url:
+        div_element = soup.find('div', class_='yotpo-main-widget')
+        # Extract the 'data-price' attribute value
+        price = div_element.get('data-price')
 
     return price, name
 
