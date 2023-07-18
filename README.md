@@ -43,4 +43,4 @@ From here you will get the CHAT_ID. If it doesn't work, take a look [here.](http
 ## Supported ecommerce sites
 - Amazon
 - Suarez Store (https://www.suarezclothing.com/)
-   
+- Cyclewear (https://cyclewear.com.co)   
