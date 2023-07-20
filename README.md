@@ -45,3 +45,4 @@ From here you will get the CHAT_ID. If it doesn't work, take a look [here.](http
 - Suarez Store (https://www.suarezclothing.com/)
 - Cyclewear (https://cyclewear.com.co)   
 - Bikeexchange (https://www.bikeexchange.com.co)
+- Bikehouse (https://www.bikehouse.co)
