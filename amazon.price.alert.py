@@ -8,7 +8,7 @@ import json
 
 #PARAMS
 SLEEP_TIME=0.25 #between attemps to fetch the price
-RUN_EVERY=300 #seconds = 5 minutes
+RUN_EVERY=30 #seconds = 0.5 minutes
 PRODUCTS_FILE= 'products.ini'
 CONFIG_FILE = 'config.ini' 
 PRICE_DIFFERENCE=1 #1 dollar, min price difference to notify
@@ -22,19 +22,19 @@ apiURL = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
 
 def get_name(soup, url):
     try:
-        if "co.suarezclothing.com" in url:
+        title = ""
+        if "suarezclothing.com" in url:
             title = soup.find("h1", attrs={"class":'vtex-store-components-3-x-productNameContainer mv0 t-heading-4'})
             title = title.find("span", attrs={"class":'vtex-store-components-3-x-productBrand'}).text
-            title = title.strip().replace(",", " ")
-
-        if "www.amazon.com" in url:
+        if "amazon.com" in url:
             title = soup.find("span", attrs={"id":'productTitle'})
-            title = title.string
-            title = title.strip().replace(",", " ")
-        if "cyclewear.com.co" or "www.bikeexchange.com.co" in url:
+        if "cyclewear.com.co" in url or "bikeexchange.com.co" in url:
             title = soup.find("h1", attrs={"class":'h3 CProductHeader-title t-productHeaderHeading'})
-            title = title.string
-            title = title.strip().replace(",", " ")
+        if "bikehouse.co" in url: 
+            title = soup.find("h1", attrs={"class":'product_title entry-title'})
+
+        title = title.string
+        title = title.strip().replace(",", " ")
 
     except AttributeError:
         title = ""
@@ -43,7 +43,6 @@ def get_name(soup, url):
 
 def get_price_name(name,url):
     price = "0"
-    print(len(name))
     print(url)
     # Headers for request
     HEADERS = ({'User-Agent':
@@ -52,7 +51,6 @@ def get_price_name(name,url):
 
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
-
     soup = BeautifulSoup(response.content, "lxml")
 
     # if name is empty -> get_name
@@ -60,24 +58,31 @@ def get_price_name(name,url):
         name = get_name(soup, url)
         print(name)
 
-    if "www.amazon.com" in url:
+    if "amazon.com" in url:
         price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
 
         if price_span is None:
             return "-1", name
-        price_text = price_span.find("span", attrs={"class": "a-offscreen"}).text
-        # Remove currency symbols and convert to float
-        price = float(price_text.replace('£', '').replace('$', '').replace(',', ''))
+        price = price_span.find("span", attrs={"class": "a-offscreen"}).text
 
-    if "co.suarezclothing.com" in url:
+    if "suarezclothing.com" in url:
         script_tag = soup.find('script', type='application/ld+json')
         if script_tag is not None:
             json_data = json.loads(script_tag.string)
-            price = json_data['offers']['lowPrice']
-    if "cyclewear.com.co" in url or "www.bikeexchange.com.co" in url:
+            price = str(json_data['offers']['lowPrice']).replace('.','')
+    if "cyclewear.com.co" in url or "bikeexchange.com.co" in url:
         div_element = soup.find('div', class_='yotpo-main-widget')
         # Extract the 'data-price' attribute value
-        price = div_element.get('data-price')
+        price = div_element.get('data-price') #.replace('.','')
+    if "bikehouse.co" in url: 
+       price1 = soup.find('span', class_='price_varies')
+       if price1 is not None:
+           price = price1.find('ins').find('span', class_='money').text
+       else:
+           price = soup.find('span', class_='money').text
+       price = price.replace('.','')
+    # Remove currency symbols and convert to float
+    price = price.replace('£', '').replace('$', '').replace(',', '')
 
     return price, name
 

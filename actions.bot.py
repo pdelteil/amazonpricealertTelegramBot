@@ -1,4 +1,3 @@
-import logging
 import configparser
 from telegram import __version__ as TG_VER
 from urllib.parse import urlparse
@@ -28,14 +27,6 @@ if __version_info__ < (20, 0, 0, "alpha", 1):
         f"This example is not compatible with your current PTB version {TG_VER}. To view the "
         f"{TG_VER} version of this example, "
         f"visit https://docs.python-telegram-bot.org/en/v{TG_VER}/examples.html")
-
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-# set higher logging level for httpx to avoid all GET and POST requests being logged
-logging.getLogger("httpx").setLevel(logging.WARNING)
-
-logger = logging.getLogger(__name__)
 
 def validate_input(input):
      # Check if the input string is empty
@@ -192,12 +183,9 @@ async def add_item(update, context):
         await update.message.reply_text(f"Input is not in the required form.")
     else:
         name, url = read_value(line) 
-        #line = line.replace("/add_item ", "") 
         id = get_last_item(PRODUCTS_FILE)
         print("id",id)
 
-        #parts = line.split(',', 1)
-        #if len(parts) > 1:
         line = name + ',$0,' + url
         print(line)
         try:
@@ -205,7 +193,7 @@ async def add_item(update, context):
 
         except ValueError:
             return None
-        new_line = str(number) + " = " + line
+        new_line = str(number) + " = " + line + "\n"
         #new_line = "\n"+ str(number) + " = " + line
 
         # Read the content of the file
@@ -215,8 +203,6 @@ async def add_item(update, context):
         for line in lines:
             if line.strip() and ("," in line or "=" in line):
                 modified_lines.append(line)
-            #else:
-            #    modified_lines.append("New content for matching line\n")
         modified_lines.append(new_line)
         # Write the modified lines back to the file
         with open(PRODUCTS_FILE, 'w') as file:
