@@ -194,7 +194,6 @@ async def add_item(update, context):
         except ValueError:
             return None
         new_line = str(number) + " = " + line + "\n"
-        #new_line = "\n"+ str(number) + " = " + line
 
         # Read the content of the file
         with open(PRODUCTS_FILE, 'r') as file:
