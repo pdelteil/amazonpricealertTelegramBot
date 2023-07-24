@@ -42,7 +42,7 @@ def get_name(soup, url):
     return title
 
 def get_price_name(name,url):
-    price = "0"
+    price = "-1"
     print(url)
     # Headers for request
     HEADERS = ({'User-Agent':
@@ -73,7 +73,7 @@ def get_price_name(name,url):
     if "cyclewear.com.co" in url or "bikeexchange.com.co" in url:
         div_element = soup.find('div', class_='yotpo-main-widget')
         # Extract the 'data-price' attribute value
-        price = div_element.get('data-price') #.replace('.','')
+        price = div_element.get('data-price')
     if "bikehouse.co" in url: 
        price1 = soup.find('span', class_='price_varies')
        if price1 is not None:
