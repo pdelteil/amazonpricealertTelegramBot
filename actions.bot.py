@@ -1,8 +1,8 @@
 import configparser
 from telegram import __version__ as TG_VER
 from urllib.parse import urlparse
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 PRODUCTS_FILE= 'products.ini'
 CONFIG_FILE = 'config.ini'
@@ -85,12 +85,27 @@ def get_last_item(file_path):
             return 0
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(main_menu_message(),
+                         reply_markup=main_menu_keyboard())
     """Send a message when the command /start is issued."""
-    user = update.effective_user
-    await update.message.reply_html(
-        rf"Hi {user.mention_html()}!",
-        reply_markup=ForceReply(selective=True),
-    )
+    #user = update.effective_user
+    #await update.message.reply_html(
+   #     rf"Hi {user.mention_html()}!",
+    #    reply_markup=ForceReply(selective=True),
+    #)
+
+
+def first_menu(bot, update):
+    bot.callback_query.message.edit_text(first_menu_message(), reply_markup=first_menu_keyboard())
+    # update.message.reply_html(
+    #    rf"Menu1!",
+    #    reply_markup=ForceReply(selective=True),
+    #)
+
+
+def main_menu(bot, update):
+  bot.callback_query.message.edit_text(main_menu_message(),
+                          reply_markup=main_menu_keyboard())
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
@@ -208,6 +223,15 @@ async def add_item(update, context):
             file.writelines(modified_lines)
         await update.message.reply_text('Item added successfully.')
 
+def main_menu_keyboard():
+  keyboard = [[InlineKeyboardButton('/read_items', callback_data='m1')],
+              [InlineKeyboardButton('Menu 2', callback_data='m2')],
+              [InlineKeyboardButton('Menu 3', callback_data='m3')]]
+  return InlineKeyboardMarkup(keyboard)
+
+def main_menu_message():
+  return 'Choose the option in main menu:'
+
 def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
@@ -221,6 +245,8 @@ def main() -> None:
     application.add_handler(CommandHandler("read_items",read_items))
     application.add_handler(CommandHandler("remove_item",remove_items_by_id))
 
+    application.add_handler(CallbackQueryHandler(main_menu, pattern='main'))
+    application.add_handler(CallbackQueryHandler(first_menu, pattern='m1'))
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 

@@ -41,6 +41,7 @@ def get_name(soup, url):
 
     return title
 
+# get price and name of item (title)
 def get_price_name(name,url):
     price = "-1"
     print(url)
@@ -59,11 +60,20 @@ def get_price_name(name,url):
         print(name)
 
     if "amazon.com" in url:
-        price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
+        #condition when the product is not longer available 
+        title = soup.find("span", attrs={"class": 'a-size-medium a-color-success'})
 
-        if price_span is None:
-            return "-1", name
-        price = price_span.find("span", attrs={"class": "a-offscreen"}).text
+        if title is not None and "Currently unavailable" in title.text:
+            print("Currently unavailable")
+            return "-2", name
+        else:
+            print("Available!")
+          
+            price_span = soup.find("span",attrs={"class":'a-price aok-align-center reinventPricePriceToPayMargin priceToPay'})
+
+            if price_span is None:
+                return "-1", name
+            price = price_span.find("span", attrs={"class": "a-offscreen"}).text
 
     if "suarezclothing.com" in url:
         script_tag = soup.find('script', type='application/ld+json')
@@ -88,10 +98,14 @@ def get_price_name(name,url):
 
 async def send_telegram_notification(item, previous_price, current_price, url):
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    message = f"Price has changed for <b> {item} </b>\n"
-    message += f"Previous price: {previous_price}\n"
-    message += f"Current price: {current_price}\n"
-    message += f"URL: {url}"
+    if -2.0 == current_price: 
+        message = f"Item {item} is no longer available!\n"
+        message += f"URL: {url}"
+    else:
+        message = f"Price has changed for <b> {item} </b>\n"
+        message += f"Previous price: {previous_price}\n"
+        message += f"Current price: {current_price}\n"
+        message += f"URL: {url}"
 
     await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode='HTML')
 
@@ -100,45 +114,53 @@ async def check_price_change(id, name, previous_price, url):
     products_file.read(PRODUCTS_FILE)
 
     try:
+
         current_price, name_new = get_price_name(name, url)
-        current_price = float(current_price)
-        if current_price == -1:
-            print("Error with price")
-            return False
-        if len(name)==0:
-            print("Name updated from ", name, "to: ", name_new)
-            products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
-            with open(PRODUCTS_FILE, 'w') as productsFile:
-                products_file.write(productsFile)
 
-        if current_price != previous_price:
-            if abs(current_price - previous_price) >= PRICE_DIFFERENCE:
-                print("Price has changed for", name_new)
-                print("Previous price: ", previous_price)
-                print("Current price: ", current_price)
-                # Send notification to Telegram
-                await send_telegram_notification(name_new, previous_price, current_price, url)
-            # Update the price in the config file
-            print("Price changed but not more than ", PRICE_DIFFERENCE)
-            products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
-            with open(PRODUCTS_FILE, 'w') as productsFile:
-                products_file.write(productsFile)
+        if current_price.strip() != "" and not current_price.isspace():
+                current_price = float(current_price)
+                if current_price == -1:
+                    print("Error with price")
+                    return False
+                if len(name)==0:
+                    print("Name updated from ", name, "to: ", name_new)
+                    products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
+                    with open(PRODUCTS_FILE, 'w') as productsFile:
+                        products_file.write(productsFile)
 
+                if current_price != previous_price:
+                    if abs(current_price - previous_price) >= PRICE_DIFFERENCE:
+                        print("Price has changed for", name_new)
+                        print("Previous price: ", previous_price)
+                        print("Current price: ", current_price)
+                        # Send notification to Telegram
+                        await send_telegram_notification(name_new, previous_price, current_price, url)
+                    # Update the price in the config file
+                    print("Price changed but not more than ", PRICE_DIFFERENCE)
+                    products_file.set('PRODUCTS', id,f'{name_new},${current_price},{url}')
+                    with open(PRODUCTS_FILE, 'w') as productsFile:
+                        products_file.write(productsFile)
+
+                else:
+                    print("Price has not changed. Still ", current_price)
+
+                return True
         else:
-            print("Price has not changed. Still ", current_price)
-
-        return True
+            print("Current price is empty or whitespace.")  
+            return False
+    except ValueError:
+        print("Invalid current price format.")
     except requests.exceptions.HTTPError as err:
         print("Error occurred during the request:", err)
         return False
 
 async def main():
+
     products_file = configparser.RawConfigParser()
 
     while True:
         # Read product information from config file
         products_file.read(PRODUCTS_FILE)
-
         products = products_file.items('PRODUCTS')
 
         for id, info in products:
@@ -148,7 +170,7 @@ async def main():
             while True:
                 status = await check_price_change(id, name, price, url)
                 if not status:
-                        print(".")
+                    print(".")
                 else:
                    break
                 time.sleep(SLEEP_TIME)
