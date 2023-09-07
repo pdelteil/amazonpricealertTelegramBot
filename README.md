@@ -17,8 +17,11 @@ From here you will get the CHAT_ID. If it doesn't work, take a look [here.](http
 1. clone this repo
 
    `git clone https://github.com/pdelteil/amazonpricealertTelegramBot.git`
+2. Install python modules
 
-2.  Run it doing
+   `pip -r requirements.txt`
+
+3.  Run it doing
    
        `python amazon.price.alert.py & python actions.bot.py` 
 
