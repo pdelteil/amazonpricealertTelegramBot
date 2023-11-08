@@ -7,11 +7,12 @@ import asyncio
 import json
 
 #PARAMS
-SLEEP_TIME=0.25 #between attemps to fetch the price
+SLEEP_TIME=0.5 #between attemps to fetch the price
 RUN_EVERY=30 #seconds = 0.5 minutes
 PRODUCTS_FILE= 'products.ini'
 CONFIG_FILE = 'config.ini' 
 PRICE_DIFFERENCE=1 #1 dollar, min price difference to notify
+MAX_PRICE_RETRIES=30
 # Read params from config file
 config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
@@ -114,7 +115,6 @@ async def check_price_change(id, name, previous_price, url):
     products_file.read(PRODUCTS_FILE)
 
     try:
-
         current_price, name_new = get_price_name(name, url)
 
         if current_price.strip() != "" and not current_price.isspace():
@@ -148,8 +148,8 @@ async def check_price_change(id, name, previous_price, url):
         else:
             print("Current price is empty or whitespace.")  
             return False
-    except ValueError:
-        print("Invalid current price format.")
+    except ValueError as exc:
+        print("Invalid current price format.", exc)
     except requests.exceptions.HTTPError as err:
         print("Error occurred during the request:", err)
         return False
@@ -167,7 +167,8 @@ async def main():
             name, price, url = info.split(',')
             price=float(price.replace('$', ''))
 
-            while True:
+            #while True:
+            for _ in range(MAX_PRICE_RETRIES):
                 status = await check_price_change(id, name, price, url)
                 if not status:
                     print(".")
